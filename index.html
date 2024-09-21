@@ -12,49 +12,49 @@
         <h1 class="text-3xl font-bold text-center mb-6" id="fight-title">UFC Scorecard</h1>
         
         <div class="mb-4 flex justify-between items-center">
-            <button id="prev-match" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"><i class="fas fa-chevron-left mr-2"></i>Previous</button>
-            <span id="match-number" class="text-xl font-semibold">Match 1</span>
-            <button id="next-match" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">Next<i class="fas fa-chevron-right ml-2"></i></button>
+            <button id="prev-match" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"><i class="fas fa-chevron-left mr-2"></i>Předchozí</button>
+            <span id="match-number" class="text-xl font-semibold">Zápas 1</span>
+            <button id="next-match" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">Další<i class="fas fa-chevron-right ml-2"></i></button>
         </div>
 
         <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
             <div class="grid grid-cols-2 gap-4 mb-4">
-                <div class="text-center text-red-600 font-bold"><i class="fas fa-fist-raised mr-2"></i>RED CORNER</div>
-                <div class="text-center text-blue-600 font-bold"><i class="fas fa-fist-raised mr-2"></i>WHITE CORNER</div>
+                <div class="text-center text-red-600 font-bold"><i class="fas fa-fire mr-2"></i>ČERVENÝ ROH</div>
+                <div class="text-center text-blue-600 font-bold"><i class="fas fa-tint mr-2"></i>BÍLÝ ROH</div>
             </div>
             <div class="grid grid-cols-4 gap-4 mb-2 font-semibold">
-                <div>ROUND</div>
-                <div>POINT RESULT</div>
-                <div>ROUND</div>
-                <div>POINT RESULT</div>
+                <div><i class="fas fa-hashtag mr-1"></i>KOLO</div>
+                <div><i class="fas fa-star mr-1"></i>BODY</div>
+                <div><i class="fas fa-hashtag mr-1"></i>KOLO</div>
+                <div><i class="fas fa-star mr-1"></i>BODY</div>
             </div>
             <div id="scorecard-body" class="grid grid-cols-4 gap-4">
                 <!-- Scorecard inputs will be generated here -->
             </div>
             <div class="grid grid-cols-4 gap-4 mt-4 font-bold">
-                <div>TOTAL</div>
+                <div><i class="fas fa-calculator mr-1"></i>CELKEM</div>
                 <div id="red-total" class="bg-gray-100 rounded p-2 text-center">0</div>
-                <div>TOTAL</div>
+                <div><i class="fas fa-calculator mr-1"></i>CELKEM</div>
                 <div id="white-total" class="bg-gray-100 rounded p-2 text-center">0</div>
             </div>
             <div class="text-center mt-4 font-bold text-gray-700">
-                <i class="fas fa-gavel mr-2"></i>WHITE JUDGE
+                <i class="fas fa-balance-scale mr-2"></i>BÍLÝ ROZHODČÍ
             </div>
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-                <h3 class="font-bold mb-2"><i class="fas fa-exclamation-triangle mr-2"></i>POINT DEDUCTIONS</h3>
+                <h3 class="font-bold mb-2"><i class="fas fa-exclamation-triangle mr-2"></i>ODEČTENÍ BODŮ</h3>
                 <textarea id="point-deductions" class="w-full h-32 p-2 rounded-lg border"></textarea>
             </div>
             <div>
-                <h3 class="font-bold mb-2"><i class="fas fa-sticky-note mr-2"></i>NOTES</h3>
+                <h3 class="font-bold mb-2"><i class="fas fa-sticky-note mr-2"></i>POZNÁMKY</h3>
                 <textarea id="notes" class="w-full h-32 p-2 rounded-lg border"></textarea>
             </div>
         </div>
         
         <div class="mt-6">
-            <h3 class="font-bold mb-2"><i class="fas fa-trophy mr-2"></i>RESULT</h3>
+            <h3 class="font-bold mb-2"><i class="fas fa-trophy mr-2"></i>VÝSLEDEK</h3>
             <textarea id="result" class="w-full h-24 p-2 rounded-lg border"></textarea>
         </div>
     </div>
@@ -68,6 +68,10 @@
                 const response = await fetch('matches.txt');
                 const text = await response.text();
                 matches = text.split('\n').filter(match => match.trim() !== '');
+                const savedIndex = localStorage.getItem('currentMatchIndex');
+                if (savedIndex !== null) {
+                    currentMatchIndex = parseInt(savedIndex);
+                }
                 displayMatch();
             } catch (error) {
                 console.error('Chyba při načítání zápasů:', error);
@@ -77,8 +81,9 @@
         function displayMatch() {
             if (matches.length > 0) {
                 document.getElementById('fight-title').textContent = matches[currentMatchIndex];
-                document.getElementById('match-number').textContent = `Match ${currentMatchIndex + 1}`;
+                document.getElementById('match-number').textContent = `Zápas ${currentMatchIndex + 1}`;
                 loadScorecardData();
+                localStorage.setItem('currentMatchIndex', currentMatchIndex);
             }
         }
 
