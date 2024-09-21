@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UFC Scorecard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl font-bold text-center mb-6" id="fight-title">UFC Scorecard</h1>
+        
+        <div class="mb-4 flex justify-between items-center">
+            <button id="prev-match" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"><i class="fas fa-chevron-left mr-2"></i>Previous</button>
+            <span id="match-number" class="text-xl font-semibold">Match 1</span>
+            <button id="next-match" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">Next<i class="fas fa-chevron-right ml-2"></i></button>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="text-center text-red-600 font-bold"><i class="fas fa-fist-raised mr-2"></i>RED CORNER</div>
+                <div class="text-center text-blue-600 font-bold"><i class="fas fa-fist-raised mr-2"></i>WHITE CORNER</div>
+            </div>
+            <div class="grid grid-cols-4 gap-4 mb-2 font-semibold">
+                <div>ROUND</div>
+                <div>POINT RESULT</div>
+                <div>ROUND</div>
+                <div>POINT RESULT</div>
+            </div>
+            <div id="scorecard-body" class="grid grid-cols-4 gap-4">
+                <!-- Scorecard inputs will be generated here -->
+            </div>
+            <div class="grid grid-cols-4 gap-4 mt-4 font-bold">
+                <div>TOTAL</div>
+                <div id="red-total" class="bg-gray-100 rounded p-2 text-center">0</div>
+                <div>TOTAL</div>
+                <div id="white-total" class="bg-gray-100 rounded p-2 text-center">0</div>
+            </div>
+            <div class="text-center mt-4 font-bold text-gray-700">
+                <i class="fas fa-gavel mr-2"></i>WHITE JUDGE
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h3 class="font-bold mb-2"><i class="fas fa-exclamation-triangle mr-2"></i>POINT DEDUCTIONS</h3>
+                <textarea id="point-deductions" class="w-full h-32 p-2 rounded-lg border"></textarea>
+            </div>
+            <div>
+                <h3 class="font-bold mb-2"><i class="fas fa-sticky-note mr-2"></i>NOTES</h3>
+                <textarea id="notes" class="w-full h-32 p-2 rounded-lg border"></textarea>
+            </div>
+        </div>
+        
+        <div class="mt-6">
+            <h3 class="font-bold mb-2"><i class="fas fa-trophy mr-2"></i>RESULT</h3>
+            <textarea id="result" class="w-full h-24 p-2 rounded-lg border"></textarea>
+        </div>
+    </div>
+
+    <script>
+        let currentMatchIndex = 0;
+        let matches = [];
+
+        async function loadMatches() {
+            try {
+                const response = await fetch('matches.txt');
+                const text = await response.text();
+                matches = text.split('\n').filter(match => match.trim() !== '');
+                displayMatch();
+            } catch (error) {
+                console.error('Chyba při načítání zápasů:', error);
+            }
+        }
+
+        function displayMatch() {
+            if (matches.length > 0) {
+                document.getElementById('fight-title').textContent = matches[currentMatchIndex];
+                document.getElementById('match-number').textContent = `Match ${currentMatchIndex + 1}`;
+                loadScorecardData();
+            }
+        }
+
+        function generateScorecardInputs() {
+            const scorecardBody = document.getElementById('scorecard-body');
+            scorecardBody.innerHTML = '';
+            for (let i = 1; i <= 5; i++) {
+                scorecardBody.innerHTML += `
+                    <div>${i}</div>
+                    <input type="number" min="0" max="10" id="red-${i}" class="border rounded p-2 text-center">
+                    <div>${i}</div>
+                    <input type="number" min="0" max="10" id="white-${i}" class="border rounded p-2 text-center">
+                `;
+            }
+            addInputListeners();
+        }
+
+        function addInputListeners() {
+            for (let corner of ['red', 'white']) {
+                for (let i = 1; i <= 5; i++) {
+                    const input = document.getElementById(`${corner}-${i}`);
+                    input.addEventListener('input', () => {
+                        calculateTotal(corner);
+                        saveScorecardData();
+                    });
+                }
+            }
+            document.getElementById('point-deductions').addEventListener('input', saveScorecardData);
+            document.getElementById('notes').addEventListener('input', saveScorecardData);
+            document.getElementById('result').addEventListener('input', saveScorecardData);
+        }
+
+        function calculateTotal(corner) {
+            let total = 0;
+            for (let i = 1; i <= 5; i++) {
+                const score = parseInt(document.getElementById(`${corner}-${i}`).value) || 0;
+                total += score;
+            }
+            document.getElementById(`${corner}-total`).textContent = total;
+        }
+
+        function saveScorecardData() {
+            const data = {
+                redScores: [],
+                whiteScores: [],
+                pointDeductions: document.getElementById('point-deductions').value,
+                notes: document.getElementById('notes').value,
+                result: document.getElementById('result').value
+            };
+
+            for (let i = 1; i <= 5; i++) {
+                data.redScores.push(document.getElementById(`red-${i}`).value);
+                data.whiteScores.push(document.getElementById(`white-${i}`).value);
+            }
+
+            localStorage.setItem(`scorecard-${currentMatchIndex}`, JSON.stringify(data));
+        }
+
+        function loadScorecardData() {
+            const savedData = localStorage.getItem(`scorecard-${currentMatchIndex}`);
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                for (let i = 1; i <= 5; i++) {
+                    document.getElementById(`red-${i}`).value = data.redScores[i-1];
+                    document.getElementById(`white-${i}`).value = data.whiteScores[i-1];
+                }
+                document.getElementById('point-deductions').value = data.pointDeductions;
+                document.getElementById('notes').value = data.notes;
+                document.getElementById('result').value = data.result;
+                calculateTotal('red');
+                calculateTotal('white');
+            } else {
+                resetScorecard();
+            }
+        }
+
+        function resetScorecard() {
+            for (let corner of ['red', 'white']) {
+                for (let i = 1; i <= 5; i++) {
+                    document.getElementById(`${corner}-${i}`).value = '';
+                }
+                document.getElementById(`${corner}-total`).textContent = '0';
+            }
+            document.getElementById('point-deductions').value = '';
+            document.getElementById('notes').value = '';
+            document.getElementById('result').value = '';
+        }
+
+        document.getElementById('prev-match').addEventListener('click', () => {
+            if (currentMatchIndex > 0) {
+                currentMatchIndex--;
+                displayMatch();
+            }
+        });
+
+        document.getElementById('next-match').addEventListener('click', () => {
+            if (currentMatchIndex < matches.length - 1) {
+                currentMatchIndex++;
+                displayMatch();
+            }
+        });
+
+        loadMatches();
+        generateScorecardInputs();
+    </script>
+</body>
+</html>
